@@ -1,2 +1,2 @@
-git add README.md
-git commit -m "Resolve merge conflict"
+# README.md
+This is a Solana trading bot using Jupiter API
