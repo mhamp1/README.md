@@ -80,12 +80,6 @@ engine = create_async_engine('sqlite+aiosqlite:///trades.db')
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 from spl.token.constants import TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID
 from spl.token.instructions import get_associated_token_address, create_associated_token_account
-# Load dotenv for secrets
-load_dotenv()
-if nest_asyncio:
-    nest_asyncio.apply()
-else:
-    logger.warning("nest_asyncio not installed; some async features may fail.")
 # Ensure log directory exists and safe logging setup
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
@@ -98,6 +92,12 @@ logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
 handler.setFormatter(formatter)
+# Load dotenv for secrets
+load_dotenv()
+if nest_asyncio:
+    nest_asyncio.apply()
+else:
+    logger.warning("nest_asyncio not installed; some async features may fail.")
 executor = ThreadPoolExecutor(max_workers=2)
 # ConfigLoader for safe env parsing
 class ConfigLoader:
@@ -1198,4 +1198,6 @@ async def run_loop(provider, http_session, ml_vol, ml_yield, tick_seconds: int =
         except Exception as e:
             logger.exception(f"Error in run loop tick: {e}")
         run_loop_tick_duration_seconds.observe(time.time() - start)
-        await asyncio.sleep
+        await asyncio.sleep(tick_seconds)
+if __name__ == "__main__":
+    uvicorn.run(app, host=os.getenv("HOST", "0.0.0.0"), port=int(os.getenv("PORT", "8000")), log_level="info")
