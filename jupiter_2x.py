@@ -235,9 +235,8 @@ def get_wallet():
         decrypted_base58 = f.decrypt(ENCRYPTED_SOL_KEY.encode()).decode()
         private_key_bytes = base58.decode(decrypted_base58)
         kp = Keypair.from_bytes(private_key_bytes)
-        logger.info(f"Bot wallet address: {str(kp.pubkey())}")
+        logger.info(f"Bot wallet address from decryption: {str(kp.pubkey())}")
         return Wallet(kp)
-    logger.info(f"Bot wallet address from decryption: {str(kp.pubkey())}")
     except Exception as e:
         logger.error(f"Wallet decryption failed: {e}")
         return None
@@ -962,7 +961,7 @@ async def get_trades(limit: int = 10):
 retry_count = 0
 breaker_triggered = False
 MAX_RETRIES = 10
-async def retry_with_with_backoff(fn, max_retries=5):
+async def retry_with_backoff(fn, max_retries=5):
     global retry_count, breaker_triggered
     for i in range(max_retries):
         start = time.time()
@@ -1028,11 +1027,11 @@ async def lifespan(app: FastAPI):
         provider = init_res if init_res is not None else None
     # Override with decrypted wallet if available
     real_wallet = get_wallet()
-    logger.info(f"Using wallet: {provider.wallet.public_key if provider.wallet.public_key else 'Dummy'}")
     if real_wallet:
         provider.wallet = real_wallet
     else:
         logger.error("Using dummy wallet - balances will be 0")
+    logger.info(f"Using wallet: {provider.wallet.public_key if provider.wallet.public_key else 'Dummy'}")
     app.state.provider = provider # Explicitly set for endpoints
     app.state.adapters = await init_adapters(provider)
     global marginfi_adapter, kamino_adapter, jito_adapter, raydium_adapter, orca_adapter, phoenix_adapter, pump_fun_adapter, flash_loan_adapter
