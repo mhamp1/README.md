@@ -227,6 +227,7 @@ def normalize(d: dict) -> dict:
     return {k: v / total for k, v in d.items()} if total > 0 else d
 # Wallet decryption
 def get_wallet():
+    logger.info("Attempting wallet decryption with key: " + ENCRYPTED_SOL_KEY[:10] + "...")  # Partial for security
     if not ENCRYPTED_SOL_KEY or not FERNET_SECRET:
         logger.warning("No encrypted key or secret provided; using dummy wallet.")
         return None
