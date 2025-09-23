@@ -235,8 +235,9 @@ def get_wallet():
         decrypted_base58 = f.decrypt(ENCRYPTED_SOL_KEY.encode()).decode()
         private_key_bytes = base58.decode(decrypted_base58)
         kp = Keypair.from_bytes(private_key_bytes)
-        logger.info(f"Bot wallet address from decryption: {str(kp.pubkey())}")
+        logger.info(f"Bot wallet address: {str(kp.pubkey())}")
         return Wallet(kp)
+    logger.info(f"Bot wallet address from decryption: {str(kp.pubkey())}")
     except Exception as e:
         logger.error(f"Wallet decryption failed: {e}")
         return None

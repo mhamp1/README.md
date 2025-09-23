@@ -17,3 +17,4 @@ aiosqlite
 pandas
 scikit-learn
 websocket-client
+sqlalchemy
