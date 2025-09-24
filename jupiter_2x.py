@@ -277,23 +277,31 @@ class StrategyAgent:
         self.age = 0
         self.parent_id = parent_id
         self.depth = depth
+        self.memory = [] # (state, pnl)
+        self.age = 0
+        self.parent_id = parent_id
+        self.depth = depth
+
     def evaluate(self, yields, rsi, volatility, macd, signal, volume_rising):
         try:
             return self.strategy_fn(yields, rsi, volatility, macd, signal, volume_rising)
         except Exception as e:
             logger.warning(f"Agent {self.name} strategy error: {e}")
             return {}
-   def mutate(self, mutation_rate=0.1):
-    mutation = random.choice(["swap_bias++", "lend_bias--", "risk_tolerance++"])
-    def mutated_strategy(yields, rsi, volatility, macd, signal, volume_rising):
-        base = self.strategy_fn(yields, rsi, volatility, macd, signal, volume_rising)
-        mutated = {k: max(0, min(1, v + random.uniform(-mutation_rate, mutation_rate))) for k, v in base.items()}
-        return normalize(mutated)
-    new_name = f"{self.name}_mut"
-    new_agent = StrategyAgent(new_name, mutated_strategy, self.species, parent_id=self.name, depth=self.depth + 1)
-    try:
-        log_mutation(new_name, self.name, mutation, new_agent.score, new_agent.depth)
-    except Exception as e:
+
+    def mutate(self, mutation_rate=0.1):
+        mutation = random.choice(["swap_bias++", "lend_bias--", "risk_tolerance++"])
+        def mutated_strategy(yields, rsi, volatility, macd, signal, volume_rising):
+            base = self.strategy_fn(yields, rsi, volatility, macd, signal, volume_rising)
+            mutated = {k: max(0, min(1, v + random.uniform(-mutation_rate, mutation_rate))) for k, v in base.items()}
+            return normalize(mutated)
+        new_name = f"{self.name}_mut"
+        new_agent = StrategyAgent(new_name, mutated_strategy, self.species, parent_id=self.name, depth=self.depth + 1)
+        try:
+            log_mutation(new_name, self.name, mutation, new_agent.score, new_agent.depth)
+        except Exception as e:
+            logger.exception(f"Failed to log mutation: {e}")
+        return new_agent
         logger.exception(f"Failed to log mutation: {e}")
     return new_agent
 # Strategy functions (extended with volume)
