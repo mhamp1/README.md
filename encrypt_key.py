@@ -1,10 +1,7 @@
 from cryptography.fernet import Fernet
-
-# Replace with your base58 private key from Step 2
-private_key = b"2mN6tzurkK7HHe5C7Ziqv8Q8YLDHZd5ERfT2qAHxhHQuHijMwrK3S3NkYrhkXhsJNVceFc6WmfoEKf4aKXTyeEo3"  # e.g., b"2zQ..."
-
+private_key = input("Enter your base58 private key: ")
 key = Fernet.generate_key()
 f = Fernet(key)
-encrypted = f.encrypt(private_key)
+encrypted = f.encrypt(private_key.encode())
 print("FERNET_SECRET:", key.decode())
 print("ENCRYPTED_SOL_KEY:", encrypted.decode())

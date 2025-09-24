@@ -1,14 +1,13 @@
-import base58
 from cryptography.fernet import Fernet
-from solders.keypair import Keypair
 
-kp = Keypair()  # New random keypair
-fernet_key = Fernet.generate_key()
-encrypted = Fernet(fernet_key).encrypt(base58.b58encode(kp.to_bytes()))
+# Replace with your exact plain base58 private key from Phantom export
+plain_key = '5QpeYg1U7wXhLXmMpzGD7A4RBCW9qHdjEuhNzv7R7bSK6P3uUzWKA7ceq2NqJuDYvWxhfaSVWtiiMc58kKThSKSL'
 
-fernet_str = fernet_key.decode()
-print(f"FERNET_SECRET length: {len(fernet_str)} (should be 44)")
-print(f"FERNET_SECRET={fernet_str}")
-print(f"ENCRYPTED_SOL_KEY={encrypted.decode()}")
-print(f"\nYour new public key (for Explorer): {kp.pubkey()}")
-print("Fund this address with SOL/USDC on mainnet/devnet.")
+key = Fernet.generate_key()
+f = Fernet(key)
+encrypted = f.encrypt(plain_key.encode())
+
+print("NEW FERNET_SECRET (copy to Render env):", key.decode())
+print("NEW ENCRYPTED_SOL_KEY (copy to Render env):", encrypted.decode())
+print("Decrypted test (should match plain_key):", f.decrypt(encrypted).decode())
+print("Your wallet pubkey (for verification):", Keypair.from_base58_string(plain_key).pubkey())  # Add this line for address
