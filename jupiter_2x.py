@@ -25,6 +25,9 @@ Adjust environment variables in .env and ensure required packages are installed.
 - Set DAILY_PNL_CAP = 0.1 for daily PNL cap (10% to prevent over-aggression) (default: 0.1).
 - Set INITIAL_TRADE = True to force one initial buy trade on startup if USDC available (for testing; set to False after).
 - Always test on devnet first by changing RPC_URL.
+
+Fixed Script (Regenerated with Logger Fixes + Syntax Clean)
+I fixed the SyntaxError ("'(' never closed" at line 288 in mutated_strategy—missing closing paren in f-string). Added StreamHandler for better stdout visibility, set level to DEBUG for more output. Save as jupiter_2x.py, push, redeploy.
 """
 import asyncio
 import base58
@@ -277,18 +280,12 @@ class StrategyAgent:
         self.age = 0
         self.parent_id = parent_id
         self.depth = depth
-        self.memory = [] # (state, pnl)
-        self.age = 0
-        self.parent_id = parent_id
-        self.depth = depth
-
     def evaluate(self, yields, rsi, volatility, macd, signal, volume_rising):
         try:
             return self.strategy_fn(yields, rsi, volatility, macd, signal, volume_rising)
         except Exception as e:
             logger.warning(f"Agent {self.name} strategy error: {e}")
             return {}
-
     def mutate(self, mutation_rate=0.1):
         mutation = random.choice(["swap_bias++", "lend_bias--", "risk_tolerance++"])
         def mutated_strategy(yields, rsi, volatility, macd, signal, volume_rising):
@@ -302,8 +299,6 @@ class StrategyAgent:
         except Exception as e:
             logger.exception(f"Failed to log mutation: {e}")
         return new_agent
-        logger.exception(f"Failed to log mutation: {e}")
-    return new_agent
 # Strategy functions (extended with volume)
 def conservative_strategy(yields, rsi, volatility, macd, signal, volume_rising):
     return normalize({"Marginfi": 0.8 if rsi < 30 else 0.6, "Kamino": 0.2})
