@@ -25,9 +25,6 @@ Adjust environment variables in .env and ensure required packages are installed.
 - Set DAILY_PNL_CAP = 0.1 for daily PNL cap (10% to prevent over-aggression) (default: 0.1).
 - Set INITIAL_TRADE = True to force one initial buy trade on startup if USDC available (for testing; set to False after).
 - Always test on devnet first by changing RPC_URL.
-
-Fixed Script (Regenerated with Logger Fixes + Syntax Clean)
-I fixed the SyntaxError ("'(' never closed" at line 288 in mutated_strategy—missing closing paren in f-string). Added StreamHandler for better stdout visibility, set level to DEBUG for more output. Save as jupiter_2x.py, push, redeploy.
 """
 import asyncio
 import base58
@@ -305,38 +302,36 @@ def conservative_strategy(yields, rsi, volatility, macd, signal, volume_rising):
 def aggressive_strategy(yields, rsi, volatility, macd, signal, volume_rising):
     return normalize({"Marginfi": 0.3, "Kamino": 0.7 if rsi > 70 else 0.5})
 def hybrid_strategy(yields, rsi, volatility, macd, signal, volume_rising):
-    buy_threshold = 30 if volatility < 0.005 else 25 # Tighter in high vol
+    buy_threshold = 30 if volatility < 0.005 else 25
     sell_threshold = 70 if volatility < 0.005 else 75
     buy_boost = 0.9 if volume_rising else 0.8
     sell_boost = 0.9 if volume_rising else 0.8
-    if rsi < buy_threshold and macd > signal: # Buy with MACD + volume confirmation
+    if rsi < buy_threshold and macd > signal:
         return normalize({"Swap_Buy_SOL": buy_boost, "Kamino": 0.1, "Raydium_LP": 0.05, "Orca_LP": 0.05})
-    elif rsi > sell_threshold and macd < signal: # Sell with MACD + volume confirmation
+    elif rsi > sell_threshold and macd < signal:
         return normalize({"Swap_Sell_SOL": sell_boost, "Marginfi": 0.1, "Raydium_LP": 0.05, "Orca_LP": 0.05})
-    else: # Neutral: Loop + LP for yields (21%+ APY target)
+    else:
         return normalize({"Loop_USDC_SOL": 0.4, "Raydium_LP": 0.2, "Orca_LP": 0.2, "Arb_Check": 0.2 if ENABLE_ARB else 0.0})
 def loop_optimized_strategy(yields, rsi, volatility, macd, signal, volume_rising):
-    # Prioritize Jito staking in loops (5% base + airdrops)
-    if rsi >= 30 and rsi <= 70: # Neutral focus on optimized loops
+    if rsi >= 30 and rsi <= 70:
         return normalize({"Loop_USDC_SOL": 0.6, "Jito_Stake": 0.3, "Kamino": 0.1})
     else:
         return hybrid_strategy(yields, rsi, volatility, macd, signal, volume_rising)
 def enhanced_hybrid_strategy(yields, rsi, volatility, macd, signal, volume_rising):
-    # Best strategy: RSI/MACD swaps with DCA, neutral optimized loops (Jito + Marginfi + Kamino for 11%+), LP on Raydium/Orca sideways, arb on diffs triggered by mints
     buy_threshold = 30 if volatility < 0.005 else 25
     sell_threshold = 70 if volatility < 0.005 else 75
-    if rsi < buy_threshold and macd > signal and volume_rising: # Buy with full confirmations
+    if rsi < buy_threshold and macd > signal and volume_rising:
         return normalize({"Swap_Buy_SOL": 0.7, "DCA_Buy": 0.1, "Kamino": 0.1, "Orca_LP": 0.1})
-    elif rsi > sell_threshold and macd < signal and volume_rising: # Sell
+    elif rsi > sell_threshold and macd < signal and volume_rising:
         return normalize({"Swap_Sell_SOL": 0.7, "DCA_Sell": 0.1, "Marginfi": 0.1, "Raydium_LP": 0.1})
-    else: # Neutral: Optimized loops + LP + arb
+    else:
         return normalize({"Loop_USDC_SOL": 0.3, "Jito_Stake": 0.2, "Raydium_LP": 0.15, "Orca_LP": 0.15, "Arb_Check": 0.2 if ENABLE_ARB else 0.0})
 strategy_pool = [
     StrategyAgent("conservative", conservative_strategy, "conservative"),
     StrategyAgent("aggressive", aggressive_strategy, "aggressive"),
     StrategyAgent("hybrid", hybrid_strategy, "hybrid"),
     StrategyAgent("loop_optimized", loop_optimized_strategy, "optimized"),
-    StrategyAgent("enhanced_hybrid", enhanced_hybrid_strategy, "enhanced") # Best strategy agent
+    StrategyAgent("enhanced_hybrid", enhanced_hybrid_strategy, "enhanced")
 ]
 def pooled_strategy(yields: dict, rsi: float = 50.0, volatility: float = 0.0, macd: float = 0.0, signal: float = 0.0, volume_rising: bool = False) -> dict:
     raw_outputs = [agent.evaluate(yields, rsi, volatility, macd, signal, volume_rising) for agent in strategy_pool]
@@ -347,7 +342,7 @@ def pooled_strategy(yields: dict, rsi: float = 50.0, volatility: float = 0.0, ma
     strategy = normalize(combined)
     record_strategy_distribution(strategy)
     return strategy
-# ML prediction for yields/vol (additive, conditional)
+# ML prediction for yields/vol
 async def train_ml_model(db_path):
     if not ENABLE_ML:
         return None, None
@@ -1044,7 +1039,7 @@ async def lifespan(app: FastAPI):
         provider.wallet = real_wallet
         # Debug: reflect wallet and balance in logs
         sol_bal, usdc_bal = await get_balances(provider)
-        logger.info(f"Wallet loaded: {provider.wallet.public_key}, Balance: {sol_bal / 1e9} SOL, {usdc_bal / 1e6} USDC")
+        logger.info(f"Wallet loaded: {provider.wallet.public_key}, Balance: {float(sol_bal) / 1e9} SOL, {float(usdc_bal) / 1e6} USDC")
     else:
         logger.warning("Wallet loaded: Dummy, Balance: 0 SOL, 0 USDC")
         logger.error("Using dummy wallet - balances will be 0")
@@ -1118,7 +1113,41 @@ async def get_trades_endpoint(limit: int = 10):
 @app.get("/balances")
 async def get_balances_endpoint():
     sol_bal, usdc_bal = await get_multi_balances(app.state.providers)
-    return {"sol": sol_bal / 1e9, "usdc": usdc_bal / 1e6}
+    return {"sol": float(sol_bal) / 1e9, "usdc": float(usdc_bal) / 1e6}
+@app.post("/sweep-back-immediate")
+async def sweep_back_immediate():
+    if DRY_RUN:
+        logger.info("DRY_RUN=True: Simulating sweep-back - no real transfers executed.")
+        return {"status": "simulated", "message": "Sweep-back simulated - no funds moved."}
+    provider = app.state.provider
+    if provider.wallet.public_key is None:
+        return {"status": "error", "message": "Dummy wallet - no real funds to sweep."}
+    session = app.state.http
+    # Swap all USDC to SOL
+    _, usdc_bal = await get_balances(provider)
+    if usdc_bal > 0:
+        await execute_swap(provider, session, USDC_MINT, SOL_MINT, usdc_bal)
+        logger.info(f"Swapped {usdc_bal / 1e6} USDC to SOL")
+    # Transfer all SOL to recovery
+    sol_bal, _ = await get_balances(provider)
+    if sol_bal > 0:
+        recovery_pubkey = Pubkey.from_string(RECOVERY_ADDRESS)
+        recent_blockhash = await provider.connection.get_latest_blockhash()
+        ix = transfer_checked(TransferCheckedParams(
+            from_token_account=get_associated_token_address(provider.wallet.public_key, Pubkey.from_string(SOL_MINT)),
+            to_token_account=get_associated_token_address(recovery_pubkey, Pubkey.from_string(SOL_MINT)),
+            mint=Pubkey.from_string(SOL_MINT),
+            amount=sol_bal,
+            decimals=9,  # SOL decimals
+            signer=provider.wallet.public_key
+        ))
+        msg = MessageV0.try_compile(provider.wallet.public_key, [ix], [], recent_blockhash.value.blockhash)
+        tx = VersionedTransaction(msg, [provider.wallet.payer])
+        signed_tx = provider.wallet.sign_transaction(tx)
+        tx_id = await provider.connection.send_transaction(signed_tx)
+        await provider.connection.confirm_transaction(tx_id)
+        logger.info(f"Transferred {float(sol_bal) / 1e9} SOL to recovery address {RECOVERY_ADDRESS}, tx_id={tx_id}")
+    return {"status": "success", "message": "Sweep-back completed - all funds transferred to recovery address."}
 # Main async entrypoint and persistent run loop (enhanced with fixes)
 async def run_loop(provider, http_session, ml_vol, ml_yield, tick_seconds: int = 30):
     dca_counter = {"buy": 0, "sell": 0} # For DCA splitting
@@ -1141,8 +1170,8 @@ async def run_loop(provider, http_session, ml_vol, ml_yield, tick_seconds: int =
             # Fetch balances and price for risk management
             sol_bal, usdc_bal = await get_multi_balances(app.state.providers)
             price = await get_sol_usdc_price(http_session)
-            total_value = (sol_bal / 1e9 * price) + (usdc_bal / 1e6)
-            usdc_ratio = (usdc_bal / 1e6) / total_value if total_value > 0 else 1.0
+            total_value = (float(sol_bal) / 1e9 * price) + (float(usdc_bal) / 1e6)
+            usdc_ratio = (float(usdc_bal) / 1e6) / total_value if total_value > 0 else 1.0
             risk_per_trade = 0.01 if volatility < 0.01 else 0.005 # Dynamic: lower in high vol
             max_swap_usdc = int(total_value * risk_per_trade * 1e6) # In USDC units
             max_swap_lamports = int((total_value * risk_per_trade / price) * 1e9)
