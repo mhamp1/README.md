@@ -11,5 +11,3 @@ prometheus-client
 sqlalchemy
 aiosqlite
 python-dotenv
-pip install -U solders
-pip freeze > requirements.txt
