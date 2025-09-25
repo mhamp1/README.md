@@ -40,7 +40,7 @@ RPC_URL = os.getenv("RPC_URL", "https://api.mainnet-beta.solana.com")
 JUPITER_QUOTE_URL = "https://quote-api.jup.ag/v6/quote"
 JUPITER_SWAP_URL = "https://quote-api.jup.ag/v6/swap"
 SOL_MINT = Pubkey.from_string("So11111111111111111111111111111111111111112")
-Logging setup
+# Logging setup
 logging.basicConfig(level=logging.INFO if not DRY_RUN else logging.DEBUG)
 logger = logging.getLogger(name)
 Get test wallets
