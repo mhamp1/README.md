@@ -173,7 +173,7 @@ async def scan_and_reverse_transfers(provider, session, multi_wallets, recovery_
 # FastAPI app for endpoint
 app = FastAPI()
 
-@app.post("/sweep-back-immediate")
+@app.get("/sweep-back-immediate")
 async def sweep_back_immediate():
     if DRY_RUN:
         logger.info("DRY_RUN=True: Simulating sweep-back - no real transfers executed.")
