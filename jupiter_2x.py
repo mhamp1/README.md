@@ -30,7 +30,7 @@ from spl.token.async_client import AsyncToken
 from anchorpy import Provider, Wallet
 import uvicorn
 
-Load dotenv for secrets
+# Load dotenv for secrets
 load_dotenv()
 Config
 DRY_RUN = os.getenv("DRY_RUN", "True").lower() == "true"
